@@ -93,7 +93,13 @@ export default function Admin() {
   const { data, isLoading } = useListPlayers({ query: { enabled: isAdmin } });
   const players = Array.isArray(data) ? data : [];
   const addPlayer = useAddPlayer();
-  const deletePlayer = useDeletePlayer();
+  const deletePlayer = useDeletePlayer({
+    request: {
+      headers: {
+        "x-admin-key": adminKey,
+      },
+    },
+  });
 
   const form = useForm<z.infer<typeof addPlayerSchema>>({
     resolver: zodResolver(addPlayerSchema),
@@ -145,7 +151,6 @@ export default function Admin() {
     deletePlayer.mutate(
       { id },
       {
-        request: { headers: { "x-admin-key": adminKey } },
         onSuccess: () => {
           toast({ description: `${username} removed` });
           queryClient.invalidateQueries({ queryKey: getListPlayersQueryKey() });
