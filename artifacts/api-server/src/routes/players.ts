@@ -8,10 +8,25 @@ import {
   listStoredPlayers,
 } from "../lib/players-store";
 
-const ADMIN_KEY = "stenersadmin2";
+const ADMIN_KEY = process.env.ADMIN_KEY;
 const hasDatabase = Boolean(process.env.DATABASE_URL);
 
 const router = Router();
+
+function hasValidAdminKey(value: string | undefined): boolean {
+  return Boolean(ADMIN_KEY) && value === ADMIN_KEY;
+}
+
+router.get("/admin/verify", (req, res) => {
+  const adminKey = req.headers["x-admin-key"] as string | undefined;
+
+  if (!hasValidAdminKey(adminKey)) {
+    res.status(401).json({ error: "Invalid admin key" });
+    return;
+  }
+
+  res.status(204).send();
+});
 
 router.get("/", async (req, res) => {
   try {
@@ -50,7 +65,7 @@ router.post("/", async (req, res) => {
 
   const { username, adminKey } = parsed.data;
 
-  if (adminKey !== ADMIN_KEY) {
+  if (!hasValidAdminKey(adminKey)) {
     res.status(401).json({ error: "Invalid admin key" });
     return;
   }
@@ -112,7 +127,7 @@ router.post("/", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   const adminKey = req.headers["x-admin-key"] as string | undefined;
 
-  if (!adminKey || adminKey !== ADMIN_KEY) {
+  if (!hasValidAdminKey(adminKey)) {
     res.status(401).json({ error: "Invalid admin key" });
     return;
   }

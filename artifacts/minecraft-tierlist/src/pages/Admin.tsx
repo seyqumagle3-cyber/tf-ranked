@@ -8,23 +8,24 @@ import * as z from "zod";
 import { Loader2, Trash2, ArrowLeft, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const ADMIN_KEY_REQUIRED = "stenersadmin2";
-
 const addPlayerSchema = z.object({
   username: z.string().min(1, "Username required").max(32, "Too long"),
 });
 
-function AdminLogin({ onLogin }: { onLogin: () => void }) {
+function AdminLogin({ onLogin }: { onLogin: (adminKey: string) => Promise<void> }) {
   const [key, setKey] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (key === ADMIN_KEY_REQUIRED) {
-      sessionStorage.setItem("adminKey", ADMIN_KEY_REQUIRED);
-      onLogin();
-    } else {
+    setIsSubmitting(true);
+    try {
+      await onLogin(key);
+    } catch {
       setError("Wrong key, try again");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -69,10 +70,11 @@ function AdminLogin({ onLogin }: { onLogin: () => void }) {
           {error && <p className="text-xs font-medium" style={{ color: "hsl(var(--destructive))" }}>{error}</p>}
           <button
             type="submit"
+            disabled={isSubmitting}
             className="h-12 rounded-lg text-sm font-semibold transition-opacity hover:opacity-90 active:opacity-80"
             style={{ background: "hsl(var(--primary))", color: "#fff" }}
           >
-            Sign in
+            {isSubmitting ? "Checking..." : "Sign in"}
           </button>
         </form>
       </div>
@@ -81,7 +83,8 @@ function AdminLogin({ onLogin }: { onLogin: () => void }) {
 }
 
 export default function Admin() {
-  const [isAdmin, setIsAdmin] = useState(() => sessionStorage.getItem("adminKey") === ADMIN_KEY_REQUIRED);
+  const [adminKey, setAdminKey] = useState(() => sessionStorage.getItem("adminKey") ?? "");
+  const [isAdmin, setIsAdmin] = useState(() => Boolean(sessionStorage.getItem("adminKey")));
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -95,16 +98,33 @@ export default function Admin() {
     defaultValues: { username: "" },
   });
 
-  if (!isAdmin) return <AdminLogin onLogin={() => setIsAdmin(true)} />;
+  const verifyAdminKey = async (candidateKey: string) => {
+    const response = await fetch("/api/players/admin/verify", {
+      headers: {
+        "x-admin-key": candidateKey,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Invalid admin key");
+    }
+
+    sessionStorage.setItem("adminKey", candidateKey);
+    setAdminKey(candidateKey);
+    setIsAdmin(true);
+  };
+
+  if (!isAdmin) return <AdminLogin onLogin={verifyAdminKey} />;
 
   const handleLogout = () => {
     sessionStorage.removeItem("adminKey");
+    setAdminKey("");
     setIsAdmin(false);
   };
 
   const onSubmitAdd = ({ username }: z.infer<typeof addPlayerSchema>) => {
     addPlayer.mutate(
-      { data: { username, adminKey: ADMIN_KEY_REQUIRED } },
+      { data: { username, adminKey } },
       {
         onSuccess: () => {
           toast({ description: `${username} added to the roster` });
@@ -123,7 +143,7 @@ export default function Admin() {
     deletePlayer.mutate(
       { id },
       {
-        request: { headers: { "x-admin-key": ADMIN_KEY_REQUIRED } },
+        request: { headers: { "x-admin-key": adminKey } },
         onSuccess: () => {
           toast({ description: `${username} removed` });
           queryClient.invalidateQueries({ queryKey: getListPlayersQueryKey() });
