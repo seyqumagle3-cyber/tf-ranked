@@ -8,6 +8,8 @@ import * as z from "zod";
 import { Loader2, Trash2, ArrowLeft, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/+$/, "") ?? "";
+
 const addPlayerSchema = z.object({
   username: z.string().min(1, "Username required").max(32, "Too long"),
 });
@@ -99,7 +101,7 @@ export default function Admin() {
   });
 
   const verifyAdminKey = async (candidateKey: string) => {
-    const response = await fetch("/api/players/admin/verify", {
+    const response = await fetch(`${API_BASE_URL}/api/players/admin/verify`, {
       headers: {
         "x-admin-key": candidateKey,
       },
