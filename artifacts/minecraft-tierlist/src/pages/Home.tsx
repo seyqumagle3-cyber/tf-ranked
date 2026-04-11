@@ -4,7 +4,7 @@ import { useListPlayers } from "@workspace/api-client-react";
 import { useTierList, TierType } from "@/hooks/use-tierlist";
 import logoImg from "@assets/logo_1775845660807.png";
 
-const TIERS: TierType[] = ["S", "A", "B", "C", "D", "TRICHEUR"];
+const TIERS: TierType[] = ["S", "A", "B", "C", "D", "TRICHEUR", "CONNAIT_PAS"];
 
 const TIER_STYLE: Record<TierType, { bg: string; label: string }> = {
   S: { bg: "linear-gradient(135deg, #ff6b6b, #ee5a24)", label: "S" },
@@ -13,11 +13,12 @@ const TIER_STYLE: Record<TierType, { bg: string; label: string }> = {
   C: { bg: "linear-gradient(135deg, #69db7c, #1dd1a1)", label: "C" },
   D: { bg: "linear-gradient(135deg, #74c0fc, #4d79ff)", label: "D" },
   TRICHEUR: { bg: "linear-gradient(135deg, #b197fc, #7950f2)", label: "TRICHEUR" },
+  CONNAIT_PAS: { bg: "linear-gradient(135deg, #adb5bd, #6c757d)", label: "CONNAIT PAS" },
 };
 
 export default function Home() {
   const { data, isLoading, error } = useListPlayers();
-  const { tiers, movePlayer, resetTiers, isLoaded } = useTierList();
+  const { tiers, movePlayer, isLoaded } = useTierList();
   const players = Array.isArray(data) ? data : [];
 
   // Track which zone is currently highlighted — updated only via dragenter/drop/dragend
@@ -161,7 +162,7 @@ export default function Home() {
           {TIERS.map((tier) => {
             const style = TIER_STYLE[tier];
             const isActive = activeZone === tier;
-            const isTricheur = tier === "TRICHEUR";
+            const isWideLabel = tier === "TRICHEUR" || tier === "CONNAIT_PAS";
             return (
               <div
                 key={tier}
@@ -177,8 +178,8 @@ export default function Home() {
                   className="tier-label"
                   style={{
                     background: style.bg,
-                    fontSize: isTricheur ? "1rem" : "2.4rem",
-                    letterSpacing: isTricheur ? "0.05em" : "0.04em",
+                    fontSize: isWideLabel ? "0.92rem" : "2.4rem",
+                    letterSpacing: isWideLabel ? "0.05em" : "0.04em",
                   }}
                 >
                   {style.label}
@@ -229,14 +230,8 @@ export default function Home() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Non classé — {unrankedPlayers.length} joueur{unrankedPlayers.length !== 1 ? "s" : ""}
+              Non classe - {unrankedPlayers.length} joueur{unrankedPlayers.length !== 1 ? "s" : ""}
             </p>
-            <button
-              onClick={resetTiers}
-              className="text-xs font-medium px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-colors"
-            >
-              Réinitialiser
-            </button>
           </div>
 
           <div
@@ -253,7 +248,7 @@ export default function Home() {
           >
             {unrankedPlayers.length === 0 ? (
               <div className="w-full flex items-center justify-center text-muted-foreground/40 text-sm py-8">
-                Tous les joueurs sont classés
+                Tous les joueurs sont classes
               </div>
             ) : (
               unrankedPlayers.map((player) => (
@@ -285,3 +280,4 @@ export default function Home() {
     </div>
   );
 }
+

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export type TierType = "S" | "A" | "B" | "C" | "D" | "TRICHEUR";
+export type TierType = "S" | "A" | "B" | "C" | "D" | "TRICHEUR" | "CONNAIT_PAS";
 export type Tiers = Record<TierType, string[]>;
 
 const DEFAULT_TIERS: Tiers = {
@@ -10,6 +10,7 @@ const DEFAULT_TIERS: Tiers = {
   C: [],
   D: [],
   TRICHEUR: [],
+  CONNAIT_PAS: [],
 };
 
 const STORAGE_KEY = "mc-tierlist-state";
